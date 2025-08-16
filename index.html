@@ -1,104 +1,220 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Media to URL - Traveloka Style</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Wanz — Catbox Uploader</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #009EFF, #00CFFF);
-      color: #333;
-      text-align: center;
-      margin: 0;
-      padding: 0;
+    :root {
+      --bg: #0b0f14;
+      --panel: #0f1720;
+      --accent: #7c5cff;
+      --muted: #9aa4b2;
+      --glass: rgba(255,255,255,0.03);
     }
-    header {
-      background: #fff;
-      padding: 15px;
-      font-size: 22px;
-      font-weight: bold;
-      color: #009EFF;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .container {
-      margin: 40px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 12px;
-      max-width: 500px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    }
-    input[type="file"] {
-      margin: 20px 0;
-    }
-    button {
-      padding: 12px 25px;
-      background: #009EFF;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #007ACC;
-    }
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      background: #f0f8ff;
-      border-radius: 8px;
-      word-wrap: break-word;
-    }
-    .popup {
-      position: fixed;
-      top: -100px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #009EFF;
-      color: white;
-      padding: 15px 25px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      opacity: 0;
-      transition: all 0.5s ease;
-      z-index: 999;
-    }
-    .popup.show {
-      top: 30px;
-      opacity: 1;
-    }
-    footer {
-      margin-top: 40px;
-      color: white;
-      font-size: 14px;
-    }
-    .loading {
-      display: none;
-      margin-top: 15px;
-      color: #009EFF;
-      font-weight: bold;
-    }
+    * { box-sizing: border-box; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color: #e6eef8; }
+    body { margin:0; min-height:100vh; background: linear-gradient(180deg,#071021 0%, #0b0f14 100%); display:flex; align-items:center; justify-content:center; padding:24px; }
+    .card { width:100%; max-width:780px; background:var(--panel); border-radius:12px; padding:28px; box-shadow: 0 6px 30px rgba(0,0,0,0.6); }
+    h1 { margin:0 0 6px 0; font-size:20px; color:#fff; }
+    p.lead { margin:0 0 18px 0; color:var(--muted); font-size:13px; }
+    .drop { border:2px dashed rgba(124,92,255,0.22); padding:28px; border-radius:10px; display:flex; gap:18px; align-items:center; transition:all .18s ease; background:var(--glass); cursor:pointer; }
+    .drop.dragover { box-shadow:0 6px 30px rgba(124,92,255,0.06); transform:translateY(-2px); border-color:var(--accent); }
+    .drop .icon { width:56px; height:56px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(124,92,255,0.18), rgba(124,92,255,0.06)); font-size:24px; }
+    .drop .info { flex:1; }
+    .drop .info b { display:block; margin-bottom:6px; color:#fff; }
+    .controls { margin-top:14px; display:flex; gap:10px; align-items:center; }
+    .btn { background:var(--accent); color:white; padding:8px 12px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+    .btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); }
+    .progressWrap { margin-top:14px; display:none; }
+    .progress { height:10px; background:rgba(255,255,255,0.06); border-radius:999px; overflow:hidden; }
+    .progress > div { height:100%; width:0%; background:linear-gradient(90deg,var(--accent),#5ad1ff); transition:width .12s linear; }
+    .result { margin-top:16px; display:none; gap:8px; align-items:center; flex-flow:row wrap; }
+    .result input { background:transparent; border:1px solid rgba(255,255,255,0.04); padding:8px 10px; border-radius:8px; color:#dfe9ff; min-width:0; flex:1; }
+    .history { margin-top:16px; color:var(--muted); font-size:13px; }
+    footer { margin-top:18px; text-align:center; color:var(--muted); font-size:12px; }
+    .small { font-size:12px; color:var(--muted); }
+    .hint { color:var(--muted); font-size:13px; margin-top:6px; }
   </style>
 </head>
 <body>
-  <header>Media to URL</header>
+  <div class="card" role="main">
+    <h1>Wanz — Catbox Uploader</h1>
+    <p class="lead">Upload foto / video; hasil otomatis diunggah ke Catbox dan dapatkan link langsung.</p>
 
-  <div class="container">
-    <h2>Upload Media → Dapatkan Link</h2>
-    <input type="file" id="fileInput">
-    <br>
-    <button onclick="uploadFile()">Upload</button>
-    <div class="loading" id="loading">⏳ Sedang mengupload...</div>
-    <div class="result" id="result"></div>
+    <div id="drop" class="drop" tabindex="0">
+      <div class="icon">📤</div>
+      <div class="info">
+        <b>Seret & lepas file di sini atau klik untuk pilih</b>
+        <div class="hint">Mendukung gambar & video. File besar juga bisa — progress akan muncul.</div>
+      </div>
+      <input id="fileInput" type="file" name="file" style="display:none" accept="image/*,video/*" />
+    </div>
+
+    <div class="controls">
+      <button id="selectBtn" class="btn ghost">Pilih File</button>
+      <button id="uploadBtn" class="btn" disabled>Upload</button>
+      <div style="flex:1"></div>
+      <div class="small">Status: <span id="status">Ready</span></div>
+    </div>
+
+    <div class="progressWrap">
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="small" id="progressText">0%</div>
+    </div>
+
+    <div class="result" id="resultRow">
+      <input id="resultUrl" readonly />
+      <button id="copyBtn" class="btn">Copy</button>
+      <button id="openBtn" class="btn ghost">Open</button>
+    </div>
+
+    <div class="history" id="history">
+      <strong>History:</strong>
+      <ul id="historyList" style="padding-left:18px; margin:8px 0 0 0;"></ul>
+    </div>
+
+    <footer>© Wanz Official</footer>
   </div>
 
-  <footer>© Wanz Official</footer>
+<script>
+(function(){
+  const drop = document.getElementById('drop');
+  const fileInput = document.getElementById('fileInput');
+  const selectBtn = document.getElementById('selectBtn');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const status = document.getElementById('status');
+  const progressWrap = document.querySelector('.progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  const resultRow = document.getElementById('resultRow');
+  const resultUrl = document.getElementById('resultUrl');
+  const copyBtn = document.getElementById('copyBtn');
+  const openBtn = document.getElementById('openBtn');
+  const historyList = document.getElementById('historyList');
 
-  <div class="popup" id="popup"></div>
+  let selectedFile = null;
 
-  <script src="api/upload.js"></script>
+  // load history
+  const loadHistory = () => {
+    const data = JSON.parse(localStorage.getItem('wanz_history') || '[]');
+    historyList.innerHTML = '';
+    data.slice().reverse().forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.url)}</a> — ${new Date(item.t).toLocaleString()}`;
+      historyList.appendChild(li);
+    });
+  };
+
+  function escapeHtml(s){ return (s + '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  loadHistory();
+
+  function setStatus(s){ status.textContent = s; }
+
+  drop.addEventListener('click', ()=> fileInput.click());
+  selectBtn.addEventListener('click', ()=> fileInput.click());
+
+  fileInput.addEventListener('change', (e)=>{
+    const f = e.target.files[0];
+    handleFileSelect(f);
+  });
+
+  ['dragenter','dragover'].forEach(ev=>{
+    drop.addEventListener(ev, (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      drop.classList.add('dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(ev=>{
+    drop.addEventListener(ev, (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      drop.classList.remove('dragover');
+    });
+  });
+
+  drop.addEventListener('drop', (e)=>{
+    const f = e.dataTransfer.files[0];
+    handleFileSelect(f);
+  });
+
+  function handleFileSelect(f){
+    if(!f) return;
+    selectedFile = f;
+    setStatus('File siap: ' + f.name + ' (' + Math.round(f.size/1024) + ' KB)');
+    uploadBtn.disabled = false;
+  }
+
+  uploadBtn.addEventListener('click', uploadFile);
+
+  function uploadFile(){
+    if(!selectedFile) return;
+    uploadBtn.disabled = true;
+    setStatus('Uploading...');
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = '0%';
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload');
+
+    xhr.upload.addEventListener('progress', (e)=>{
+      if(e.lengthComputable){
+        const pct = Math.round((e.loaded / e.total) * 100);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = pct + '%';
+      }
+    });
+
+    xhr.onload = function(){
+      if(xhr.status === 200){
+        try {
+          const json = JSON.parse(xhr.responseText);
+          if(json.url){
+            resultRow.style.display = 'flex';
+            resultUrl.value = json.url;
+            setStatus('Upload sukses');
+            // save history
+            const h = JSON.parse(localStorage.getItem('wanz_history') || '[]');
+            h.push({ url: json.url, t: Date.now() });
+            localStorage.setItem('wanz_history', JSON.stringify(h));
+            loadHistory();
+          } else {
+            setStatus('Gagal: unexpected response');
+            console.error('Unexpected response', xhr.responseText);
+          }
+        } catch (err){
+          setStatus('Gagal membaca response');
+          console.error(err, xhr.responseText);
+        }
+      } else {
+        setStatus('Upload gagal: ' + xhr.status);
+        console.error('Upload failed', xhr.status, xhr.responseText);
+      }
+      uploadBtn.disabled = false;
+    };
+
+    xhr.onerror = function(){
+      setStatus('Network error saat upload');
+      uploadBtn.disabled = false;
+    };
+
+    const fd = new FormData();
+    fd.append('file', selectedFile, selectedFile.name);
+    xhr.send(fd);
+  }
+
+  copyBtn.addEventListener('click', ()=>{
+    const url = resultUrl.value;
+    if(!url) return;
+    navigator.clipboard.writeText(url).then(()=> setStatus('Link disalin ke clipboard'));
+  });
+
+  openBtn.addEventListener('click', ()=>{
+    const url = resultUrl.value;
+    if(url) window.open(url, '_blank', 'noopener');
+  });
+
+})();
+</script>
 </body>
-                                </html>
+        </html>
